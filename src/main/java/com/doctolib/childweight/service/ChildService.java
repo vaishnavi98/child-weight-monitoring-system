@@ -14,10 +14,13 @@ import com.doctolib.childweight.domain.GrowthTrajectoryEvaluator;
 import com.doctolib.childweight.domain.HealthcareProvider;
 import com.doctolib.childweight.domain.WeightAuditEvaluator;
 import com.doctolib.childweight.domain.WeightMeasurement;
+import com.doctolib.childweight.domain.WeightMeasurement.AuditStatus;
 import com.doctolib.childweight.dto.ChildGrowthSummaryResponse;
 import com.doctolib.childweight.dto.EnrollChildRequest;
 import com.doctolib.childweight.dto.RecordWeightRequest;
 import com.doctolib.childweight.dto.WeightMeasurementResponse;
+import com.doctolib.childweight.exception.ChildNotFoundException;
+import com.doctolib.childweight.exception.ProviderNotFoundException;
 import com.doctolib.childweight.repository.ChildRepository;
 import com.doctolib.childweight.repository.HealthcareProviderRepository;
 
@@ -39,35 +42,32 @@ public class ChildService {
 
 	@Transactional
 	public Child enrollChild(EnrollChildRequest request) {
-		
+
 		boolean duplicateExists = childRepository.existsByFirstNameIgnoreCaseAndLastNameIgnoreCaseAndDateOfBirth(
 				request.firstName(), request.lastName(), request.dateOfBirth());
-		if(duplicateExists) {
+		if (duplicateExists) {
 			throw new IllegalArgumentException("A child with this same record exists");
 		}
-		
-		HealthcareProvider provider = providerRepository.findById(request.providerId())
-				.orElseThrow(() -> new IllegalArgumentException("Provider not found with ID: " + request.providerId()));
 
-		Child child = new Child(request.firstName(), request.lastName(), request.dateOfBirth(), request.gender(), provider);
+		HealthcareProvider provider = providerRepository.findById(request.providerId())
+				.orElseThrow(() -> new ProviderNotFoundException(request.providerId()));
+
+		Child child = new Child(request.firstName(), request.lastName(), request.dateOfBirth(), request.gender(),
+				provider);
 
 		return childRepository.save(child);
 	}
 
 	@Transactional
 	public void recordWeight(Long childId, RecordWeightRequest request) {
-		Child child = childRepository.findById(childId)
-				.orElseThrow(() -> new IllegalArgumentException("Child not found with ID: " + childId));
+		Child child = childRepository.findById(childId).orElseThrow(() -> new ChildNotFoundException(childId));
 
 		HealthcareProvider recordingProvider = providerRepository.findById(request.providerId())
-				.orElseThrow(() -> new IllegalArgumentException("Provider not found with ID: " + request.providerId()));
+				.orElseThrow(() -> new ProviderNotFoundException(request.providerId()));
 
-		// Cross-facility security enforcement
-		if (!child.getEnrollingProvider().getId().equals(recordingProvider.getId())) {
-			throw new IllegalStateException("Access Denied: Provider does not match who enrolled for this child.");
-		}
+		validateEnrollingProvider(child, recordingProvider.getId());
 
-		WeightMeasurement.AuditStatus status = auditEvaluator.evaluteAuditStatus(child, request.weight());
+		AuditStatus status = auditEvaluator.evaluteAuditStatus(child, request.weight());
 
 		child.addWeight(request.weight(), recordingProvider.getId(), status);
 	}
@@ -76,7 +76,7 @@ public class ChildService {
 	public ChildGrowthSummaryResponse evaluteGrowthTrajectory(Long childId) {
 
 		Child child = childRepository.findByIdWithWeight(childId)
-				.orElseThrow(() -> new IllegalArgumentException("Child Id not found"));
+				.orElseThrow(() -> new ChildNotFoundException(childId));
 
 		WeightMeasurement latest = child.getLatestWeight()
 				.orElseThrow(() -> new IllegalArgumentException("No weight records found"));
@@ -87,15 +87,15 @@ public class ChildService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<WeightMeasurementResponse> getChildWeightHistory(Long childId, Long requestingProviderId,Pageable page) {
+	public Page<WeightMeasurementResponse> getChildWeightHistory(Long childId, Long requestingProviderId,
+			Pageable page) {
 
-		Child child = childRepository.findById(childId)
-				.orElseThrow(() -> new IllegalArgumentException("Child Id not found: " + childId));
+		Child child = childRepository.findById(childId).orElseThrow(() -> new ChildNotFoundException(childId));
 
-		if (!child.getEnrollingProvider().getId().equals(requestingProviderId)) {
-	        throw new IllegalStateException("Access Denied: Only the enrolling provider can view measurement history.");
-	    }
-		
+		validateEnrollingProvider(child, requestingProviderId);
+
+		// As the business requirements asked for the latest date and history to be
+		// appeared first
 		List<WeightMeasurementResponse> allWeights = child.getWeights().stream()
 				.sorted(Comparator.comparing(WeightMeasurement::getRecordedAt).reversed())
 				.map(w -> new WeightMeasurementResponse(w.getWeightInKg(), "kg", w.getProviderId(), w.getRecordedAt(),
@@ -112,5 +112,19 @@ public class ChildService {
 		List<WeightMeasurementResponse> pagecontent = allWeights.subList(start, end);
 
 		return new PageImpl<>(pagecontent, page, allWeights.size());
+	}
+
+	private void validateEnrollingProvider(Child child, Long requestingProviderId) {
+		if (!child.getEnrollingProvider().getId().equals(requestingProviderId)) {
+			throw new IllegalStateException("Access Denied: Provider does not match who enrolled for this child.");
+		}
+	}
+	
+	@Transactional
+	public void deleteChild(Long childId) {
+		if (!childRepository.existsById(childId)) {
+			throw new ChildNotFoundException(childId);
+		}
+		childRepository.deleteById(childId);
 	}
 }

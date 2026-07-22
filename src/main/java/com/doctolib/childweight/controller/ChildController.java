@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,14 +39,14 @@ public class ChildController {
 
 	}
 
-	@PostMapping("api/{id}/weight")
+	@PostMapping("/{id}/weight")
 	public ResponseEntity<Void> recordWeight(@PathVariable("id") Long childId,
 			@Valid @RequestBody RecordWeightRequest req) {
 		childService.recordWeight(childId, req);
 		return ResponseEntity.ok().build();
 	}
 
-	@GetMapping("/{id}/weights")
+	@GetMapping("/{id}/weights/page")
 	public ResponseEntity<Page<WeightMeasurementResponse>> getWeightHistory(
 			@PathVariable("id") Long childId,
 			@PathVariable("id") Long providerId,
@@ -54,5 +55,11 @@ public class ChildController {
 		Page<WeightMeasurementResponse> history = childService.getChildWeightHistory(childId, providerId, page);
 		return ResponseEntity.ok(history);
 	}
+	
+	@DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteChild(@PathVariable Long id) {
+        childService.deleteChild(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
 
 }

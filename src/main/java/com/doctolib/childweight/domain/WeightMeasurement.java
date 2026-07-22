@@ -28,14 +28,14 @@ public class WeightMeasurement {
     @Column(name = "audit_status", nullable = false)
     private AuditStatus status;
 
-    protected WeightMeasurement() {}
+    public WeightMeasurement() {}
 
     public WeightMeasurement(double weightInKg, Long providerId, AuditStatus status) {
         if (weightInKg <= 2.0 || weightInKg >= 30.0) {
             throw new IllegalArgumentException("Weight must be between 2.0kg and 30.0kg");
         }
         if (providerId == null) {
-            throw new IllegalArgumentException("Provider ID is required");
+        	throw new IllegalArgumentException("ProviderId cannot be null" + providerId);
         }
         this.weightInKg = weightInKg;
         this.providerId = providerId;
@@ -43,7 +43,23 @@ public class WeightMeasurement {
         this.status = status!= null? status : AuditStatus.VERIFIED;
     }
 
-    public double getWeightInKg() { return weightInKg; }
+    public void setWeightInKg(double weightInKg) {
+		this.weightInKg = weightInKg;
+	}
+
+	public void setProviderId(Long providerId) {
+		this.providerId = providerId;
+	}
+
+	public void setRecordedAt(LocalDateTime recordedAt) {
+		this.recordedAt = recordedAt;
+	}
+
+	public void setStatus(AuditStatus status) {
+		this.status = status;
+	}
+
+	public double getWeightInKg() { return weightInKg; }
     public Long getProviderId() { return providerId; }
     public LocalDateTime getRecordedAt() { return recordedAt; }
     public AuditStatus getAuditStatus() { return status; }

@@ -20,32 +20,34 @@ public class GrowthTrajectoryEvaluator {
 		WeightMeasurement lat = latestweight.get();
 		WeightMeasurement prev = prevweight.get();
 
-		long daysbetween = ChronoUnit.DAYS.between(prev.getRecordedAt(), lat.getRecordedAt());
+		long daysBetween = ChronoUnit.DAYS.between(prev.getRecordedAt(), lat.getRecordedAt());
 
-		if (daysbetween <= 0)
+		if (daysBetween <= 0)
 			return 0.0;
 
-		double weightdiff = (lat.getWeightInKg() - prev.getWeightInKg());
+		double weightdiff = (lat.getWeightInKg() - prev.getWeightInKg()) * 1000.0;
 
-		return weightdiff / daysbetween;
+		double velocity =  weightdiff / daysBetween;
+		
+		return velocity;
 	}
 
-	// Check if any significant weight loss for the child is occured.
+	// Check if any significant weight loss for the child is occurred.
 	public boolean hasweightdrop(Child child) {
-		Optional<WeightMeasurement> latestweight = child.getLatestWeight();
-		Optional<WeightMeasurement> prevweight = child.getPreviousWeight();
+		Optional<WeightMeasurement> latestWeight = child.getLatestWeight();
+		Optional<WeightMeasurement> prevWeight = child.getPreviousWeight();
 
-		if (latestweight.isEmpty() || prevweight.isEmpty())
+		if (latestWeight.isEmpty() || prevWeight.isEmpty())
 			return false;
 
-		WeightMeasurement lat = latestweight.get();
-		WeightMeasurement prev = prevweight.get();
+		WeightMeasurement lat = latestWeight.get();
+		WeightMeasurement prev = prevWeight.get();
 
-		long daysbetween = ChronoUnit.DAYS.between(prev.getRecordedAt(), lat.getRecordedAt());
+		long daysBetween = ChronoUnit.DAYS.between(prev.getRecordedAt(), lat.getRecordedAt());
 
-		if (daysbetween <= 30 && prev.getWeightInKg() > 0) {
-			double weightdrop = (prev.getWeightInKg() - lat.getWeightInKg()) / prev.getWeightInKg();
-			return weightdrop >= 0.05;
+		if (daysBetween <= 30 && prev.getWeightInKg() > 0) {
+			double hasWeightDrop = (prev.getWeightInKg() - lat.getWeightInKg()) / prev.getWeightInKg();
+			return hasWeightDrop >= 0.05;
 		}
 
 		return false;

@@ -1,6 +1,6 @@
 package com.doctolib.childweight.dto;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.doctolib.childweight.domain.Child.Gender;
 
@@ -14,7 +14,7 @@ public record EnrollChildRequest(
 
 		@NotBlank(message = "Lastname should not be blank") String lastName,
 
-		@NotNull(message = "DOB should not be null") @PastOrPresent(message = "Date Of Birth cannot be in the future") LocalDate dateOfBirth,
+		@NotNull(message = "DOB should not be null") @PastOrPresent(message = "Date Of Birth cannot be in the future") LocalDateTime dateOfBirth,
 
 		@NotNull(message = "Gender should not be null") Gender gender,
 		

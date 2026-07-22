@@ -1,6 +1,6 @@
 package com.doctolib.childweight.repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,15 +17,15 @@ import jakarta.validation.constraints.PastOrPresent;
 
 @Repository
 public interface ChildRepository extends JpaRepository<Child, Long> {
-	@Query("select DISTINCT c from children c LEFT JOIN FETCH c.weights WHERE c.id = :id")
+	@Query("select DISTINCT c from Child c LEFT JOIN FETCH c.weights WHERE c.id = :id")
 	Optional<Child> findByIdWithWeight(@Param("id") Long id);
 	
-	@Query("select DISTINCT c from children c LEFT JOIN FETCH c.weights")
+	@Query("select DISTINCT c from Child c LEFT JOIN FETCH c.weights")
 	List<Child> findAllWithWeights();
 
 	boolean existsByFirstNameIgnoreCaseAndLastNameIgnoreCaseAndDateOfBirth(
 			@NotBlank(message = "Firstname should not be blank") String firstName,
 			@NotBlank(message = "Lastname should not be blank") String lastName,
 			@NotNull(message = "DOB should not be null") @PastOrPresent(message = "Date Of Birth cannot be in the future") 
-			LocalDate dateOfBirth);
+			LocalDateTime dateOfBirth);
 }

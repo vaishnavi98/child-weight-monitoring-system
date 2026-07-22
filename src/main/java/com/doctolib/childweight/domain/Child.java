@@ -1,6 +1,6 @@
 package com.doctolib.childweight.domain;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +42,7 @@ public class Child {
 	private String lastName;
 
 	@Column(name = "date_of_birth", nullable = false)
-	private LocalDate dateOfBirth;
+	private LocalDateTime dateOfBirth;
 
     @Enumerated(EnumType.STRING)
 	@Column(name = "gender", nullable = false)
@@ -61,7 +61,7 @@ public class Child {
 		// This is necessary for JPA default constructor
 	}
 
-	public Child(String firstName, String lastName, LocalDate dateOfBirth, Gender gender, HealthcareProvider enrollingProvider) {
+	public Child(String firstName, String lastName, LocalDateTime dateOfBirth, Gender gender, HealthcareProvider enrollingProvider) {
 		if (firstName == null || firstName.isBlank())
 			throw new IllegalArgumentException("First name cannot be empty");
 		if (lastName == null || lastName.isBlank())
@@ -108,7 +108,7 @@ public class Child {
         return lastName;
     }
 
-    public LocalDate getDateOfBirth() {
+    public LocalDateTime getDateOfBirth() {
         return dateOfBirth;
     }
 
